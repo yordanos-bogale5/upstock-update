@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table Layout</title>
+    <link rel="icon" href="upsellfavicon.png" type="image/x-icon"> <!-- Added favicon link -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@500&display=swap" rel="stylesheet">
+    <link href="./css/screen.css" rel="stylesheet">
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb@6.0.0/build/iife/index-min.js"></script>
+
+
+
+    <script>
+
+
+
+
+        function updateFiiDiiData(data) {
+            const date = data[0][0];
+            const fiiData = parseFloat(data[0][1]);
+            const diiData = parseFloat(data[0][2]);
+
+            document.querySelector('.date').textContent = `${date}`;
+
+            // Check and update FII data
+            if (fiiData < 0) {
+                document.querySelector('.fii').innerHTML = `FII: <span style="color: red;">${fiiData}</span>`;
+            } else {
+                document.querySelector('.fii').innerHTML = `FII: <span style="color: rgb(4, 189, 44);"> ${fiiData}`;
+            }
+
+            // Check and update DII data
+            if (diiData < 0) {
+                document.querySelector('.dii').innerHTML = `DII: <span style="color: red;">${diiData}</span>`;
+            } else {
+                document.querySelector('.dii').innerHTML = `DII: <span style="color: rgb(4, 189, 44);"> ${diiData}`;
+            }
+        }
+
+
+
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+
+    </script>
+    <!-- Include Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs
+        import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-firestore.js";
+
+        // Your Firebase configuration
+        const firebaseConfigLive = {
+            apiKey: "AIzaSyDZ1Vdow0cMDcYJ8pbQcjFi4w5wxR47_WM",
+            authDomain: "rpsoft-a6913.firebaseapp.com",
+            projectId: "rpsoft-a6913",
+            storageBucket: "rpsoft-a6913.appspot.com",
+            messagingSenderId: "396654702273",
+            appId: "1:396654702273:web:e8d9d2f4d52b1cddbcee40",
+            measurementId: "G-3BNVDDBM9P"
+        };
+
+        // Initialize Firebase only if it hasn't been initialized yet
+        let appLive;
+        if (!getApps().some(app => app.name === "liveApp")) {
+            appLive = initializeApp(firebaseConfigLive, "liveApp");
+        } else {
+            appLive = getApp("liveApp");
+        }
+        const dbLive = getFirestore(appLive);
+
+        // Reference to the 'latest' document in 'live-prices' collection
+        const docRef = doc(dbLive, "live-prices", "latest");
+
+        // Function to update the price and change with color based on the value
+        function updatePriceAndChange(priceElement, changeElement, price, change) {
+            priceElement.innerText = price;
+            changeElement.innerText = change;
+
+            // Check if the change is negative and set the color accordingly
+            if (change.startsWith("-")) {
+                priceElement.style.color = "#FF0000";  // Red color for negative
+                changeElement.style.color = "#FF0000";
+            } else {
+                priceElement.style.color = "#00FF00";  // Green color for positive
+                changeElement.style.color = "#00FF00";
+            }
+        }
+
+        // Real-time listener to update indices prices
+        onSnapshot(docRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                const indices = data.indices;
+
+                // Update NIFTY 50
+                updatePriceAndChange(
+                    document.getElementById("nifty-price"),
+                    document.getElementById("nifty-change"),
+                    indices["NIFTY 50"].price,
+                    indices["NIFTY 50"].change
+                );
+
+                // Update BANK NIFTY
+                updatePriceAndChange(
+                    document.getElementById("bank-price"),
+                    document.getElementById("bank-change"),
+                    indices["BANK NIFTY"].price,
+                    indices["BANK NIFTY"].change
+                );
+
+                // Update FINNIFTY
+                updatePriceAndChange(
+                    document.getElementById("fin-price"),
+                    document.getElementById("fin-change"),
+                    indices["FINNIFTY"].price,
+                    indices["FINNIFTY"].change
+                );
+
+                // Update INDIAVIX
+                updatePriceAndChange(
+                    document.getElementById("ind-price"),
+                    document.getElementById("ind-change"),
+                    indices["INDIAVIX"].price,
+                    indices["INDIAVIX"].change
+                );
+
+                updatePriceAndChange(
+                    document.getElementById("sensex-price"),
+                    document.getElementById("sensex-change"),
+                    indices["SENSEX"].price,
+                    indices["SENSEX"].change
+                );
+            } else {
+                console.log("No such document!");
+            }
+        });
+
+        // Reference to the 'latest' document in 'adv-dec' collection
+        const advDecRef = doc(dbLive, "adv-dec", "latest");
+
+        // Real-time listener to update advances/declines ratio
+        onSnapshot(advDecRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                const advances = data.advances;
+                const unchanged = data.unchanged;
+                const declines = data.declines;
+
+                // Update Advances, Unchanged, and Declines in the HTML
+                document.querySelector('.advance-number.advance').innerText = advances;
+                document.querySelector('.unchanged-number.unchanged').innerText = unchanged;
+                document.querySelector('.decline-number.decline').innerText = declines;
+
+                // Optional: Update the bar sizes if needed based on the values
+                const total = advances + unchanged + declines;
+                document.querySelector('.green-bar').style.width = `${(advances / total) * 100}%`;
+                document.querySelector('.unchanged-bar').style.width = `${(unchanged / total) * 100}%`;
+                document.querySelector('.red-bar').style.width = `${(declines / total) * 100}%`;
+            } else {
+                console.log("No such document!");
+            }
+        });
+
+        // Reference to the 'latest_price' document in 'DSJ' collection
+        const dsjRef = doc(dbLive, "DJI", "latest_price");
+
+        // Real-time listener to update DJI prices
+        onSnapshot(dsjRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                const livePrice = data.live_price;
+                const priceChange = data.price_change;
+
+                // Update DJI Price and Change
+                updatePriceAndChange(
+                    document.getElementById("dji-price"),
+                    document.getElementById("dji-change"),
+                    livePrice,
+                    priceChange
+                );
+            } else {
+                console.log("No such document in DSJ collection!");
+            }
+        });
+
+        const fiiData = [
+            { day: "Day 1", buy: 1000, sell: 500 },
+            { day: "Day 2", buy: 1200, sell: 700 },
+            { day: "Day 3", buy: 900, sell: 800 },
+            { day: "Day 4", buy: 1100, sell: 900 }
+        ];
+
+        // Loop through each day's data and update the bars
+        fiiData.forEach((data, index) => {
+            const total = data.buy + data.sell;
+            const buyPercentage = (data.buy / total) * 100;
+            const sellPercentage = (data.sell / total) * 100;
+
+            document.querySelectorAll('.green-bar')[index].style.width = buyPercentage + '%';
+            document.querySelectorAll('.red-bar')[index].style.width = sellPercentage + '%';
+
+            document.querySelectorAll('.fii-buy-number.buy')[index].textContent = data.buy;
+            document.querySelectorAll('.fii-sell-number.sell')[index].textContent = data.sell;
+            document.querySelectorAll('.fii-date')[index].textContent = data.day;
+        });
+
+
+
+    </script>
+
+<body>
+    <div class="header-container">
+        <div class="advance-decline" style="margin-left: -50px; margin-right: 20px;">
+            <div class="heading">Advances/Declines Ratio</div>
+            <div class="advance-decline-bar">
+                <div class="bar">
+                    <div class="advance-number advance"></div>
+                    <div class="green-bar"></div>
+                    <div class="unchanged-bar"></div>
+                    <div class="unchanged-number unchanged"></div>
+                    <div class="red-bar"></div>
+                    <div class="decline-number decline"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="stock-prices">
+            <div class="stock-item" style="margin-right: 7px; padding-top: 20px;">
+                <a href="https://in.tradingview.com/chart/?symbol=NSE%3ANIFTY"
+                    style="font-size: 20px; font-family: Heebo; text-decoration: none; color: white;"
+                    target="_blank"><span id="nifty-name" style="font-size: 20px; font-family: Heebo;">NIFTY 50</span></a>
+                <div class="stock-price-change">
+                    <span id="nifty-price" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                    <span id="nifty-change" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                </div>
+            </div>
+            <div class="stock-item" style="margin-right: 7px; padding-top: 20px;">
+                <a href="https://in.tradingview.com/chart/?symbol=NSE%3ABANKNIFTY"
+                    style="font-size: 20px; font-family: Heebo; text-decoration: none; color: white;"
+                    target="_blank"><span id="bank-name" style="font-size: 20px; font-family: Heebo;">BANKNIFTY</span></a>
+                <div class="stock-price-change">
+                    <span id="bank-price" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                    <span id="bank-change" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                </div>
+            </div>
+            <div class="stock-item" style="margin-right: 7px; padding-top: 20px;">
+                <a href="https://www.tradingview.com/chart/?symbol=NSE%3ACNXFINANCE"
+                    style="font-size: 20px; font-family: Heebo; text-decoration: none; color: white;"
+                    target="_blank"><span id="fin-name"
+                        style="font-size: 20px; font-family: Heebo; padding-top: 20px;">FINNIFTY</span></a>
+                <div class="stock-price-change">
+                    <span id="fin-price" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                    <span id="fin-change" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                </div>
+            </div>
+
+
+            <div class="live-timer-container">
+                <!-- Display today's date in the desired format -->
+                <div class="live-timer-label" id="current-date"></div>
+                <div class="live-timer" id="live-timer">
+                    <!-- Live Timer will be shown here -->
+                </div>
+            </div>
+            
+            <div class="stock-item" style="margin-right: 7px; padding-top: 20px; margin-left: 12px;">
+                <a href="https://in.tradingview.com/chart/?symbol=BSE%3ASENSEX"
+                    style="font-size: 20px; font-family: Heebo; text-decoration: none; color: white;"
+                    target="_blank"><span id="fin-name"
+                        style="font-size: 20px; font-family: Heebo; padding-top: 20px;">SENSEX</span></a>
+                <div class="stock-price-change">
+                    <span id="sensex-price" style="font-size: 18px; color: #00FF00; font-family: Heebo;">81611.41</span>
+                    <span id="sensex-change" style="font-size: 18px; color: #00FF00; font-family: Heebo;">+144.30</span>
+                </div>
+            </div>
+
+            <div class="stock-item" style="margin-right: 7px; padding-top: 20px;">
+                <a href="https://in.tradingview.com/chart/?symbol=NSE%3AINDIAVIX"
+                    style="font-size: 20px; font-family: Heebo; text-decoration: none; color: white;"
+                    target="_blank"><span id="ind-name"
+                        style="font-size: 20px; font-family: Heebo; padding-top: 20px;">INDIAVIX</span></a>
+                <div class="stock-price-change">
+                    <span id="ind-price" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                    <span id="ind-change" style="font-size: 18px; color: #00FF00; font-family: Heebo;"></span>
+                </div>
+            </div>
+            <div class="stock-item" style="padding-top: 20px;">
+                <a href="https://www.tradingview.com/chart/?symbol=BLACKBULL%3ADJ30.F"
+                    style="font-size: 20px; font-family: Heebo; text-decoration: none; color: white;"
+                    target="_blank"><span id="dji-name"
+                        style="font-size: 20px; font-family: Heebo; padding-top: 20px;">DJI FUT.</span></a>
+                <div class="stock-price-change">
+                    <span id="dji-price" style="font-size: 18px; color: #ff0000; font-family: Heebo;"></span>
+                    <span id="dji-change" style="font-size: 18px; color: #ff0000; font-family: Heebo;"></span>
+                </div>
+            </div>
+            
+            <div class="bar-graph-container">
+             
+                <div class="bar-group">
+                    <!-- Adjust values here as needed -->
+                    <div class="barss" data-value="+890" data-date="18 Jun" style="font-size: 17px;">
+                        <div class="bar-date">18 Jun</div>
+                    </div>
+                    <div class="barss" data-value="+1,482" data-date="17 Jun" style="font-size: 17px;">
+                        <div class="bar-date">17 Jun</div>
+                    </div>
+                    <div class="barss" data-value="-2,539" data-date="16 Jun" style="font-size: 17px; color:#fa2111;">
+                        <div class="bar-date">16 Jun</div>
+                    </div>
+                    <div class="barss" data-value="-1,263" data-date="13 Jun" style="font-size: 17px;">
+                        <div class="bar-date">13 Jun</div>
+                    </div>
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                </div>
+                
+            </div>
+        </div>
+        <div class="bar-graph-containers">
+            
+            <div class="bar-groups">
+                <!-- Adjust values here as needed -->
+                <div class="barss" data-value="+1,091.34" style="color: #fa2111;">
+                    
+                </div>
+                <div class="barss" data-value="+8,207.19" style="color: #fa2111;" ">
+                    
+                </div>
+                <div class="barss" data-value="+5,780.96" style="color: #fa2111;" ">
+                    <button onclick="location.href='https://web.stockedge.com/fii-activity?section=cm-provisional'" class="view-more-btn">View More</button>
+
+                </div>
+                <div class="barss" data-value="+3,041.44" style="color: #fa2111;" ">
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+    
+</div>
+
+    <div class="container">
+
+        <!-- No need for a button to toggle dark theme since it's default now -->
+        <!-- No need for a button to toggle dark theme since it's default now -->
+                <div class="card dark">
+            <div class="card dark">
+                <div class="header dark">
+                    <h3 id="cashHeader">Cash</h3>
+                    <!--
+                    <div class="time-filters"
+                        style="display: inline-flex; align-items: center; margin-right: 5px; font-size: 20px; margin-left: 5px;">
+                        <input type="checkbox" id="10mCheckbox" name="timeFilter" value="VII"
+                            style="margin-right: 5px;">
+                        <label for="10mCheckbox" style="margin-right: 10px;">VII</label>
+                        <input type="checkbox" id="30mCheckbox" name="timeFilter" value="IV"
+                            style="margin-right: 5px;">
+                        <label for="30mCheckbox" style="margin-right: 10px;">IV</label>
+
+                        <input type="checkbox" id="75mCheckbox" name="timeFilter" value="75m"
+                            style="margin-right: 5px;">
+                        <label for="75mCheckbox" style="margin-right: 10px;">75m</label>
+                        <input type="checkbox" id="1dCheckbox" name="timeFilter" value="10m" style="margin-right: 5px;">
+                        <label for="1dCheckbox" style="margin-right: 10px;">10m</label>
+
+                    </div>
+                    -->
+                    <div id="filter-controls" style="display: inline-flex; align-items: center; font-size: 18px;">
+    <label><input type="checkbox" value="S-2h" class="src-filter">S-2h</label>
+    <label><input type="checkbox" value="S-30m" class="src-filter">S-30m</label>
+    <label><input type="checkbox" value="B-2h" class="src-filter">B-2h</label>
+    <label><input type="checkbox" value="B-30m" class="src-filter">B-30m</label>
+</div>
+
+                    <div class="radio-buttons"
+                        style="display: inline-flex; align-items: center; margin-right: 5px; font-size: 20px; margin-left: 5px;">
+                        <input type="radio" id="liveRadio" name="viewMode" checked
+                            style="margin-right: -7px; font-size: 20px;">
+                        <label for="liveRadio"
+                            style="display: inline-flex; align-items: center; margin-right: 5px; font-size: 16px;">Vol Str.</label>
+                        <input type="radio" id="notesRadio" name="viewMode"
+                            style="margin-right: -7px; font-size: 20px;">
+                        <label for="notesRadio">Notes</label>
+                        
+                        <input type="radio" id="TVRadio" name="viewMode"
+                        style="margin-right: -7px; font-size: 20px;">
+                    <label for="TVRadio">TV</label>
+                    </div>
+                    <img src="sharewhite.png" alt="Maximize" onclick="openPage('30-minute-volume.html')">
+                </div>
+            </div>
+            <div class="header dark head2">
+                <div class="filter-group">
+                    <span class="volumedatafilters">%Vol.</span>
+                    <input type="number" id="volumeFilterInput" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="priceChangeFilterInput" class="volumedatafilters">%Pri.</label>
+                    <input type="number" id="priceChangeFilterInput" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="turnoverFilterInput" class="volumedatafilters">T.O</label>
+                    <input type="number" id="turnoverFilterInput" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="percentturnoverFilterInput" class="volumedatafilters">%T.O</label>
+                    <input type="number" id="percentturnoverFilterInput" placeholder="Enter Number">
+                </div>
+                <!-- Eye icon added -->
+                <i id="toggleEyeIcon" class="fas fa-eye eye-icon" style="color: gray;"
+                    onclick="toggleFilterVisibility()"></i>
+                <i class="fas fa-sync-alt refresh-icon" onclick="resetFilters()"></i>
+            </div>
+
+
+            <div class="content dark">
+                <table id="volumetable" class="dark">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">Pv</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">LP</th>
+                            <th style="font-size: 16px;">%Pr.</th>
+                            <th style="font-size: 16px;">%Vol</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">%T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                            <th style="font-size: 16px;">
+                                <i id="headerStarIcon" class="far fa-star" style="cursor: pointer;"></i>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Sectorial Index Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+                <table id="notesTable" class="dark" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">Pv</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">LP</th>
+                            <th style="font-size: 16px;">%Pr.</th>
+                            <th style="font-size: 16px;">%Vol</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">%T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                            <th style="font-size: 16px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Saved Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+
+                <table id="tvtable" class="dark" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">Vol%</th>
+
+                            <th style="font-size: 16px;">PL</th>
+                            <th style="font-size: 16px;">SL</th>
+                            <th style="font-size: 16px;">Tgt</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Saved Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card announcement dark">
+            <div class="header dark" style="display: flex; align-items: center; gap: 30px;">
+                <h3 style="margin-right: 30px;">Announcements</h3>
+                <input type="text" id="searchBar" placeholder="Search Stocks..."
+                    style="border-radius: 12px; padding: 5px; margin-left: 0;">
+
+                <!-- Radio Buttons for filtering -->
+                <div id="sourceFilters" style="display: flex; gap: 10px; margin-left: 20px;">
+
+                    <label><input type="radio" name="tableType" value="livetable" class="tableSwitcher"> News</label>
+                    <label><input type="radio" name="tableType" value="data" class="tableSwitcher" checked>
+                        LiveData</label>
+                        
+                </div>
+
+                <img src="sharewhite.png" alt="Maximize" onclick="openPage('market.html')" style="margin-left: auto;">
+            </div>
+            <!--
+            <div class="header dark head2">
+                <div class="filter-group">
+                    <span class="volumedatafiltersnew">%Vol.</span>
+                    <input type="number" id="volumeFilterInputcomodity" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="priceChangeFilterInputcomodity" class="volumedatafiltersnew">%Pri.</label>
+                    <input type="number" id="priceChangeFilterInputcomodity" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="turnoverFilterInputcomodity" class="volumedatafiltersnew">T.O</label>
+                    <input type="number" id="turnoverFilterInputcomodity" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="percentturnoverFilterInputcomodity" class="volumedatafiltersnew">%T.O</label>
+                    <input type="number" id="percentturnoverFilterInputcomodity" placeholder="Enter Number">
+                </div>
+                <i id="toggleEyeIcon3" class="fas fa-eye eye-icon"></i>
+                <i class="fas fa-sync-alt refresh-icon" onclick="resetFilters()"></i>
+            </div>
+        -->
+            <div class="content1 dark">
+                <div class="table-container dark">
+
+                    <table id="data" class="announcement-table dark" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Pv</th>
+                                <th style="font-size: 16px;">IP</th>
+                                <th style="font-size: 16px;">LP</th>
+                                <th style="font-size: 16px;">%Pr</th>
+                                <th style="font-size: 16px;">%Vol</th>
+                                <th style="font-size: 16px;">TO</th>
+                                <th style="font-size: 16px;">%TO</th>
+                                <th style="font-size: 16px;">Src</th>
+                                <th style="font-size: 16px;"></th>
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data table content will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+                    
+                </div>
+            </div>
+        </div>
+
+
+        <div class="card dark">
+            <div class="header dark">
+                <h3>30 Jul</h3>
+                <!-- New Filter By Source -->
+                <div class="selection-boxess">
+                    <div class="selection-boxi" data-sources="10m">A</div>
+                    <div class="selection-boxi" data-sources="30m">B</div>
+                    <div class="selection-boxi" data-sources="75m">C</div>
+                    <div class="selection-boxi" data-sources="1d">D</div>
+                </div>
+                <label>
+                    <input type="radio" name="tableToggles" value="fno" checked> F&O
+                </label>
+                <label>
+                    <input type="radio" name="tableToggles" value="cashfo"> Cash FO
+                </label>
+                <label>
+                    <input type="radio" name="tableToggles" value="fonotes"> Star
+                </label>
+                <label>
+                    <input type="radio" name="tableToggles" value="fotvtable"> TV
+                </label>
+                <img src="sharewhite.png" alt="Maximize">
+            </div>
+            <div class="header dark head2">
+                <div class="filter-group">
+                    <span class="volumedatafiltersfo">%Vol.</span>
+                    <input type="number" id="volume" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="pricechangefo" class="volumedatafiltersfo">%Pri.</label>
+                    <input type="number" id="pricechange" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="turnoverfo" class="volumedatafiltersfo">T.O</label>
+                    <input type="number" id="turnover" placeholder="Enter Number">
+                </div>
+                <div class="filter-group">
+                    <label for="percentturnoverfo" class="volumedatafiltersfo">%T.O</label>
+                    <input type="number" id="percentturnover" placeholder="Enter Number">
+                </div>
+                <i id="toggleEyeIcon2" class="fas fa-eye eye-icon" style="color: gray;"
+                    onclick="toggleFilterVisibilityfo()"></i>
+                <i class="fas fa-sync-alt refresh-icon refresh" onclick="resetFilters()"></i>
+            </div>
+
+            <div class="content dark">
+                <table id="fno" class="dark">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">Vol%</th>
+                            <th style="font-size: 16px;">PL</th>
+                            <th style="font-size: 16px;">SL.</th>
+                            <th style="font-size: 16px;">Tgt</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- FnO Index Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+
+                <div id="cashfo-wrapper">
+                    <table id="cashfo" class="dark hidden">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Pv</th>
+                                <th style="font-size: 16px;">IP</th>
+                                <th style="font-size: 16px;">LP</th>
+                                <th style="font-size: 16px;">%Pr.</th>
+                                <th style="font-size: 16px;">%Vol</th>
+                                <th style="font-size: 16px;">T.O</th>
+                                <th style="font-size: 16px;">%T.O</th>
+                                <th style="font-size: 16px;">Src</th>
+                                <th style="font-size: 16px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Cash FO Data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <table id="fonotes" class="dark hidden">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">Pv</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">LP</th>
+                            <th style="font-size: 16px;">%Pr.</th>
+                            <th style="font-size: 16px;">%Vol</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">%T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                            <th style="font-size: 16px;"></th>
+
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- FnO Index Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+
+
+                <table id="startable" class="dark hidden">
+                    <thead>
+
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">Pv</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">LP</th>
+                            <th style="font-size: 16px;">%Pr.</th>
+                            <th style="font-size: 16px;">%Vol</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">%T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                            <th style="font-size: 16px;"></th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Star Table Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+                <table id="fotvtable" class="dark hidden">
+                    <thead>
+
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">IP</th>
+                            <th style="font-size: 16px;">Vol%</th>
+                            <th style="font-size: 16px;">PL</th>
+                            <th style="font-size: 16px;">SL</th>
+                            <th style="font-size: 16px;">Tgt</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Star Table Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+
+
+
+        <div class="card results-updates dark">
+            <div class="header dark" style="display: flex; align-items: center; gap: 30px;">
+                <h3>News</h3>
+                
+                <input type="text" id="searchNewsBar" placeholder="Search News"
+                style="border-radius: 12px; padding: 5px; margin-left: 0;">
+                <div class="radio-buttons"
+                    style="display: inline-flex; align-items: center; margin-right: 5px; font-size: 20px; margin-left: 5px;">
+                    
+                    <input type="radio" id="comodityRadio" name="viewMode" checked
+                        style="margin-right: -7px; font-size: 20px;">
+                    <label for="comodityRadio"
+                        style="display: inline-flex; align-items: center; margin-right: 5px; font-size: 16px;">News</label>
+                    <input type="radio" id="starRadio" name="viewMode" style="margin-right: -7px; font-size: 20px;">
+                    <label for="starRadio">Commodity</label>    
+                    
+                    <input type="radio" id="starNews" name="viewMode" style="margin-right: -7px; font-size: 20px;">
+                    <label for="starNews">Saved News</label>
+
+                </div>
+
+              
+
+                <img src="sharewhite.png" alt="Maximize" onclick="openPage('results_updates.html')">
+
+            </div>
+
+            <div class="content dark">
+                <table id="livetable" class="announcement-table dark">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">News</th>
+                            <th style="font-size: 16px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table data will be inserted here dynamically -->
+                    </tbody>
+                </table>
+                
+                <table id="commodity" class="dark hidden">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">OP</th>
+                            <th style="font-size: 16px;">CP</th>
+                            <th style="font-size: 16px;">%Pr.</th>
+                            <th style="font-size: 16px;">%Vol</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">%T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Star Table Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+                
+
+                <table id="starcomodity" class="announcement-table dark hidden">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">OP</th>
+                            <th style="font-size: 16px;">CP</th>
+                            <th style="font-size: 16px;">%Pr.</th>
+                            <th style="font-size: 16px;">%Vol</th>
+                            <th style="font-size: 16px;">T.O</th>
+                            <th style="font-size: 16px;">%T.O</th>
+                            <th style="font-size: 16px;">Src</th>
+                            <th style="font-size: 16px;"></th>
+
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Star Table Data will be dynamically inserted here -->
+                    </tbody>
+                </table>
+                <table id="savedNewsTable" class="announcement-table dark hidden">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 16px;">Date</th>
+                            <th style="font-size: 16px;">Symbol</th>
+                            <th style="font-size: 16px;">News</th>
+                            <th style="font-size: 16px;">A</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Table data will be inserted here dynamically -->
+                    </tbody>
+                </table>
+
+
+            </div>
+        </div>
+
+
+
+
+        <div class="card dark">
+            <div class="header dark">
+                <div class="checkboxes">
+                    <label><input type="radio" name="data-type" value="sectorial" checked> Sectorial Indexes</label>
+                    <label><input type="radio" name="data-type" value="delivery">NSE Delivery</label>
+                    <label><input type="radio" name="data-type" value="bsedelivery">BSE Delivery</label>
+                    <label><input type="radio" name="data-type" value="cashfodeliverydata">Cash FO Delivery</label>
+                    <label><input type="radio" name="data-type" value="starsectorialtable">Star</label>
+                </div>
+                <img src="sharewhite.png" alt="Maximize" onclick="openPage('PCR Value.html')">
+            </div>
+        
+            <div class="header dark head2">
+                <div class="filter-group" id="sectorial-filters" style="display: none;">
+                    <label for="sectpricechange" class="volumedatafilters">% Price</label>
+                    <input type="number" id="sectpricechange" placeholder="Enter Number">
+                </div>
+        
+                <div class="filter-group" id="delivery-filters" style="display: none;">
+                    <label for="searchstock" class="volumedatafilters">Search Stock</label>
+                    <input type="text" id="searchstock" placeholder="Enter Stock Symbol">
+        
+                    <label for="deliverypricechange" class="volumedatafilters">% Price</label>
+                    <input type="number" id="deliverypricechange" placeholder="Enter Number">
+        
+                    <label for="turnovers" class="volumedatafilters">T.O</label>
+                    <input type="number" id="turnovers" placeholder="Enter T.O">
+        
+                    <label for="turnoverpercent" class="volumedatafilters">% T.O</label>
+                    <input type="number" id="turnoverpercent" placeholder="Enter %T.O">
+                    <br>
+                    <label for="deliverytdel" class="volumedatafilters">% Td.Del.</label>
+                    <input type="number" id="deliverytdel" placeholder="Enter %Td.Del.">
+        
+                    <label for="deliverylwd" class="volumedatafilters">% L.W.D</label>
+                    <input type="number" id="deliverylwd" placeholder="Enter %L.W.D">
+        
+                    <label for="deliverylwds" class="volumedatafilters">% D.Chng</label>
+                    <input type="number" id="deliverylwds" placeholder="Enter %D.Chng">
+                </div>
+                <button id="applyFiltersDelivery" class="apply-filters-btn">Apply</button>
+                <i class="fas fa-sync-alt refresh-icon" id="resetFiltersDelivery"></i>
+            </div>
+        
+            <div class="content">
+                <div class="table-container dark">
+                    <!-- Delivery Data Table -->
+                    <table id="deliverydata" class="announcement-table dark" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Price</th>
+                                <th style="font-size: 16px;">% Price</th>
+                                <th style="font-size: 16px;">% Td.Del.</th>
+                                <th style="font-size: 16px;">% L.W.D</th>
+                                <th style="font-size: 16px;">% D.Chng</th>
+                                <th style="font-size: 16px;">T.O</th>
+                                <th style="font-size: 16px;">%Vol</th>
+                                <!-- <th style="font-size: 16px;">
+                                    <i class="far fa-star" style="cursor: pointer;"></i>
+                                </th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Delivery Data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+        
+                    <!-- BSE Delivery Data Table -->
+                    <table id="bsedeliverydata" class="announcement-table dark" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Price</th>
+                                <th style="font-size: 16px;">% Price</th>
+                                <th style="font-size: 16px;">% Td.Del.</th>
+                                <th style="font-size: 16px;">% L.W.D</th>
+                                <th style="font-size: 16px;">% D.Chng</th>
+                                <th style="font-size: 16px;">T.O</th>
+                                <th style="font-size: 16px;">% T.O</th>
+                                <!-- <th style="font-size: 16px;">
+                                    <i class="far fa-star" style="cursor: pointer;"></i>
+                                </th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- BSE Delivery Data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                    <!--Cash Fo Delivery Data Table -->
+                    <table id="cashfodeliverydata" class="announcement-table dark" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Price</th>
+                                <th style="font-size: 16px;">% Price</th>
+                                <th style="font-size: 16px;">% Td.Del.</th>
+                                <th style="font-size: 16px;">% L.W.D</th>
+                                <th style="font-size: 16px;">% D.Chng</th>
+                                <th style="font-size: 16px;">T.O</th>
+                                <th style="font-size: 16px;">%Vol</th>
+                                <!-- <th style="font-size: 16px;">
+                                    <i class="far fa-star" style="cursor: pointer;"></i>
+                                </th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- BSE Delivery Data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+        
+                    <!-- Sectorial Data Table -->
+                    <table id="sectorialdata" class="announcement-table dark" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Price</th>
+                                <th style="font-size: 16px;">% Price</th>
+                                <th style="font-size: 16px;">Cash</th>
+                                <th style="font-size: 16px;">FnO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Sectorial Index Data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+        
+                    <!-- Star Sectorial Table -->
+                    <table id="starsectorialtable" class="announcement-table dark" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Price</th>
+                                <th style="font-size: 16px;">% Price</th>
+                                <th style="font-size: 16px;">% Td.Del.</th>
+                                <th style="font-size: 16px;">% L.W.D</th>
+                                <th style="font-size: 16px;">% D.Chng</th>
+                                <th style="font-size: 16px;">T.O</th>
+                                <th style="font-size: 16px;">% T.O</th>
+                                <!-- <th style="font-size: 16px;">
+                                    <i class="far fa-star" style="cursor: pointer;"></i>
+                                </th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                            <!-- Sectorial Index Data will be dynamically inserted here -->
+                        </tbody>
+                        <style>
+                            .btn-star {
+                                background-color: #4CAF50; /* Green background */
+                                color: white; /* White text */
+                                border: none; /* Remove border */
+                                padding: 10px; /* Add padding */
+                                font-size: 14px; /* Increase font size */
+                                font-weight: bold; /* Bold text */
+                                border-radius: 5px; /* Rounded corners */
+                                cursor: pointer; /* Pointer cursor on hover */
+                                transition: background-color 0.3s ease; /* Smooth hover effect */
+                                display: flex; /* Align icon and text */
+                                align-items: flex-end; /* Center align icon and text */
+                                gap: 10px; 
+                                margin-bottom:10px;/* Add space between icon and text */
+                            }
+                        
+                            .btn-star:hover {
+                                background-color: #45a049; /* Darker green on hover */
+                            }
+                        
+                            .btn-star:active {
+                                background-color: #3e8e41; /* Even darker green on click */
+                            }
+                        
+                            .glyphicon {
+                                font-size: 18px; /* Adjust icon size */
+                            }
+                        </style>
+                      <button class="btn-star" id="downloadButton" onclick="exportData()" style="display:none;">
+                          
+                        Download List
+                    </button> 
+                    
+                    </table>
+
+                </div>
+            </div>
+        </div>
+        <script>
+        function toggleTableVisibility(selectedValue) {
+            const starTable = document.getElementById("starsectorialtable");
+            const downloadButton = document.getElementById("downloadButton");
+    
+            if (selectedValue === "starsectorialtable") {
+                // Show the Star Sectorial Table and Download Button
+                starTable.style.display = "block";
+                downloadButton.style.display = "block";
+            } else {
+                // Hide the Star Sectorial Table and Download Button
+                starTable.style.display = "none";
+                downloadButton.style.display = "none";
+            }
+        }
+    
+        // Attach event listeners to radio buttons
+        document.querySelectorAll('input[name="data-type"]').forEach((radio) => {
+            radio.addEventListener("change", (event) => {
+                toggleTableVisibility(event.target.value);
+            });
+        });
+    
+        // Function to export data from the Star Sectorial Table
+        function exportData() {
+            const table = document.getElementById("starsectorialtable");
+    
+            // Extract data from the table
+            const tableData = [];
+            const headers = [];
+    
+            // Extract headers
+            const headerCells = table.querySelectorAll("thead th");
+            headerCells.forEach((header) => {
+                headers.push(header.innerText.trim());
+            });
+            tableData.push(headers);
+    
+            // Extract rows
+            const rows = table.querySelectorAll("tbody tr");
+            rows.forEach((row) => {
+                const rowData = [];
+                const cells = row.querySelectorAll("td");
+                cells.forEach((cell) => {
+                    rowData.push(cell.innerText.trim());
+                });
+                tableData.push(rowData);
+            });
+    
+            // Create a workbook and add the data
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(tableData);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "StarTable");
+    
+            // Export to Excel
+            XLSX.writeFile(workbook, "StarTable.xlsx");
+        }
+    </script>
+
+
+
+        <div class="card">
+            <div class="header">
+                <div class="radio-buttons">
+                    
+                    <label>
+                        <input type="radio" name="tableToggle" value="banlist" checked onchange="toggleTables()">
+                        MWPL
+                    </label>
+                    <label>
+                        <input type="radio" name="tableToggle" value="fno" onchange="toggleTables()">
+                        OI Spurts
+                    </label>
+                </div>
+
+
+                <div class="filter-groups fno-filters">
+                    <label for="searchstockinoi" class="volumedatafilters">Search Stock</label>
+                    <input type="text" id="searchstockinoi" placeholder="Enter Stock Symbol">
+                    <input type="radio" id="buyRadio" name="actionType" value="buy" checked>
+                    <label for="buyRadio" style="color: green;">Buy</label>
+                </div>
+                <div class="filter-groups fno-filters">
+                    <input type="radio" id="sellRadio" name="actionType" value="sell">
+                    <label for="sellRadio" style="color: red;">Sell</label>
+                </div>
+                <img src="sharewhite.png" alt="Maximize" onclick="openPage('oispurts.html')">
+            </div>
+            <div class="header dark head2">
+                <!-- FNO Filters -->
+                <div class="filter-groups fno-filters">
+
+                    <span class="volumedatafilters">%OI.</span>
+                    <input type="number" id="oiFilterInputFno" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups fno-filters">
+                    <label for="priceFilterInputFno" class="volumedatafilters">%Pri.</label>
+                    <input type="number" id="priceFilterInputFno" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups fno-filters">
+                    <label for="turnoverFilterInputFno" class="volumedatafilters">%T.O</label>
+                    <input type="number" id="turnoverFilterInputFno" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups fno-filters">
+                    <label style="color:#00FF00;" for="pcrFilterInput" class="volumedatafilters">%PCR</label>
+                    <input type="number" id="pcrFilterInput" placeholder="Enter Number">
+                </div>
+
+
+                <!-- Indices Filters -->
+                <div class="filter-groups indices-filters" style="display:none;">
+                    <label for="indicesoifilter" class="volumedatafilters">%OI</label>
+                    <input type="number" id="indicesoifilter" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups indices-filters" style="display:none;">
+                    <label for="indicespricefilter" class="volumedatafilters">%Pri.</label>
+                    <input type="number" id="indicespricefilter" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups indices-filters" style="display:none;">
+                    <label for="indicespcrfilter" class="volumedatafilters">%PCR.</label>
+                    <input type="number" id="indicespcrfilter" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups indices-filters" style="display:none;">
+                    <label for="indicesturnoverfilter" class="volumedatafilters">%T.O</label>
+                    <input type="number" id="indicesturnoverfilter" placeholder="Enter Number">
+                </div>
+
+                <!-- PCR Filters -->
+                <div class="filter-groups pcr-filters" style="display:none;">
+                    <label for="pcrdatafilter" class="volumedatafilters">PCR</label>
+                    <input type="number" id="pcrdatafilter" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups pcr-filters" style="display:none;">
+                    <label for="pcrdatavolume" class="volumedatafilters">%Vol.</label>
+                    <input type="number" id="pcrdatavolume" placeholder="Enter Number">
+                </div>
+                <div class="filter-groups pcr-filters" style="display:none;">
+                    <label for="pcrdataturnover" class="volumedatafilters">T.O</label>
+                    <input type="number" id="pcrdataturnover" placeholder="Enter Number">
+                </div>
+
+                <div class="filter-group ban-filters" style="display:none;">
+                    <label for="searchstockinban" class="volumedatafilters">Search Ban Stock</label>
+                    <input type="text" id="searchstockinban" placeholder="Enter Stock Symbol">
+                </div>
+                
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="priceper" class="volumedatafilters">%Pr</label>
+                    <input type="text" id="priceper" placeholder=" %Price" style="width: 50px;">
+                </div>
+
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="prevmwpl" class="volumedatafilters">Prev.MWPL</label>
+                    <input type="text" id="prevmwpl" placeholder=" Enter Prev.MWPL" style="width: 50px;">
+                </div>
+
+
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="currmwpl" class="volumedatafilters">Cur.MWPL</label>
+                    <input type="text" id="currmwpl" placeholder=" Enter Cur.MWPL<" style="width: 50px;">
+                </div>
+
+
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="percenchng" class="volumedatafilters">%Chng</label>
+                    <input type="text" id="percenchng" placeholder=" Enter %Chng" style="width: 50px;">
+                </div>
+                
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="pcrban" class="volumedatafilters">PCR</label>
+                    <input type="text" id="pcrban" placeholder=" Enter PCR" style="width: 50px;">
+                </div>
+                
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="pcrperban" class="volumedatafilters">%PCR</label>
+                    <input type="text" id="pcrperban" placeholder=" Enter %PCR" style="width: 50px;">
+                </div>
+
+                <div class="filter-group ban-filters" style="display:none;">
+
+                    <label for="turnoverban" class="volumedatafilters">TO</label>
+                    <input type="text" id="turnoverban" placeholder=" Enter T.O" style="width: 50px;">
+                </div>
+                &nbsp;&nbsp;&nbsp;
+                <div class="filter-group ban-filters" style="display:none;">
+                    <label for="turnoverpercentban" class="volumedatafilters">%T.O</label>
+                    <input type="text" id="turnoverpercentban" placeholder=" Enter %T.O" style="width: 50px;">
+                </div>
+
+
+                <i class="fas fa-sync-alt refresh-icon refresh-spurts" onclick="resetFiltersspurts()"></i>
+            </div>
+            <div class="content dark">
+                <div class="table-container">
+                    <table id="livetables" class="table dark shadow-hover display">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Expiry</th>
+                                <th style="font-size: 16px;">Pr.</th>
+                                <th style="font-size: 16px;">%Pr.</th>
+                                <th style="font-size: 16px;">%OI</th>
+                                <th style="font-size: 16px;">PCR</th>
+                                <th style="font-size: 16px;">%PCR</th>
+                                <th style="font-size: 16px;">%T.O</th>
+                                <th style="font-size: 16px;">T.O</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table data will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+                    <table id="banlisttab" class="table dark shadow-hover display" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Date</th>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">L.P</th>
+                                <th style="font-size: 16px;">%Pr</th>
+                                <th style="font-size: 16px;">Prev.MWPL</th>
+                                <th style="font-size: 16px;">Cur.MWPL</th>
+                                <th style="font-size: 16px;">%Chng</th>
+                                <th style="font-size: 16px;">PCR</th>
+                                <th style="font-size: 16px;">%PCR</th>
+                                <th style="font-size: 16px;">T.O</th>
+                                <th style="font-size: 16px;">%T.O</th>
+
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Ban List data will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+
+                    <table id="indicesTable" class="table dark shadow-hover display" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;"></th>
+                                <th style="font-size: 16px;">Expiry</th>
+                                <th style="font-size: 16px;">Pr.</th>
+                                <th style="font-size: 16px;">%Pr.</th>
+                                <th style="font-size: 16px;">%OI</th>
+                                <th style="font-size: 16px;">PCR</th>
+                                <th style="font-size: 16px;">%PCR</th>
+                                <th style="font-size: 16px;">%T.O</th>
+                                <th style="font-size: 16px;">T.O</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table data will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+                    <table id="pcrdata" class="table dark shadow-hover display" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Expiry</th>
+                                <th style="font-size: 16px;">PCR</th>
+                                <th style="font-size: 16px;">%Vol.</th>
+                                <th style="font-size: 16px;">T.O</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- PCR Data will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                    <table id="pcrindices" class="table dark shadow-hover display" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th style="font-size: 16px;">Symbol</th>
+                                <th style="font-size: 16px;">Expiry</th>
+                                <th style="font-size: 16px;">PCR</th>
+                                <th style="font-size: 16px;">%Vol.</th>
+                                <th style="font-size: 16px;">T.O</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Table data will be inserted here dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+
+    </div>
+
+    <script type='module' src="fo.js"></script>
+    <!--
+    <script>
+        const fno = initializefnOData();
+        fno.isNegativeNumber();
+        fno.isPositiveNumber();
+        fno.fetchDataAndUpdateTable();
+        fno.handleVisibilityChange();
+        fno.addSortArrows();
+        fno.sortColumn();
+        fno.saveVolumeFilterfno();
+        fno.savePriceChangeFilterfno();
+        fno.saveTurnoverFilterfno();
+        fno.filterDatafno();
+        fno.loadSavedFiltersfno();
+        fno.resetFiltersfno();
+        fno.savePercentTurnoverFilterfno();
+        fno.filterBySources();
+    </script>
+-->
+
+    <script src="oispurtstab.js"></script>
+    <script src="pcr.js"></script>
+
+    <script src="comodity.js"></script>
+
+
+    <script type="module" src="new.js"></script>
+    <!--
+    <script>
+        // Call the initializeOISpurtsTable function to initialize the OI spurts table functionality
+        const announce = initializeAnnouncements();
+        announce.fetchDataAndUpdateTable();
+        announce.generateFilterCheckboxes();
+        announce.applyFilters();
+        announce.truncateText();
+        announce.toggleReadMore();
+        announce.createReadMoreToggle();
+        announce.handleVisibilityChange();
+    </script>
+-->
+
+    <script src="Delivery.js"></script>
+
+    <script>
+        const ds = initializeDeliveryTable();
+        ds.isNegativeNumber();
+        ds.fetchDataAndUpdateTable();
+        ds.filterDataDelivery();
+        ds.handleVisibilityChange();
+        ds.addSortArrows();
+        ds.sortTable();
+
+
+    </script>
+
+
+
+<script src="bsedelievery.js"></script>
+
+<script>
+    const bsd = initializeDeliveryTable();
+    bsd.isNegativeNumber();
+    bsd.fetchDataAndUpdateTable();
+    bsd.filterDataDelivery();
+    bsd.handleVisibilityChange();
+    bsd.addSortArrows();
+    bsd.sortTable();
+
+
+</script>
+
+<script src="cashfodelivery.js"></script>
+
+<script>
+    const cfd = initializeDeliveryTable();
+    cfd.isNegativeNumber();
+    cfd.fetchDataAndUpdateTable();
+    cfd.filterDataDelivery();
+    cfd.handleVisibilityChange();
+    cfd.addSortArrows();
+    cfd.sortTable();
+
+
+</script>
+
+    <script src="sectorial.js"></script>
+
+    <script>
+
+        // Call the initializeOISpurtsTable function to initialize the OI spurts table functionality
+        const sect = initializeSectorialIndexesTable();
+        sect.playNotificationSound();
+        sect.isNegativeNumber();
+        sect.fetchDataAndUpdateTable();
+        sect.handleVisibilityChange();
+        sect.addSortArrows();
+        sect.sortColumn();
+        sect.filterDatasect();
+        sect.savePriceChangeFiltersect();
+        sect.loadSavedFilterssect();
+
+    </script>
+
+    <script type="module" src="Cash.js"></script>
+    <!--
+    <script>
+        const vd = initializeVolumeData();
+        vd.isNegativeNumber();
+        vd.isPositiveNumber();
+        vd.fetchDataAndUpdateTable();
+        vd.handleVisibilityChange();
+        vd.addSortArrows();
+        vd.sortColumn();
+    </script>
+-->
+    <script>
+        function openPage(url) {
+            window.open(url, '_blank');
+        }
+    </script>
+    
+
+
+    <script>
+
+        function updateTimer() {
+            // Create a new Date object for the current time in India
+            const indianTime = new Date().toLocaleString("en-US", {
+                timeZone: "Asia/Kolkata",
+                hour12: false
+            });
+
+            // Extract the time string and add spaces between hours, minutes, and seconds
+            const timeParts = new Date(indianTime).toTimeString().slice(0, 8).split(':');
+            const timeString = `${timeParts[0]} : ${timeParts[1]} : ${timeParts[2]}`;
+
+            // Get the timer element by its ID
+            const timerElement = document.getElementById('live-timer');
+            timerElement.textContent = timeString;
+
+            // Get the date element by its ID and update it with today's date
+            const dateElement = document.getElementById('current-date');
+            dateElement.textContent = getCurrentDate();
+        }
+
+        // Function to get current date in "06 Aug, Tuesday" format
+        function getCurrentDate() {
+            const date = new Date().toLocaleString("en-US", {
+                timeZone: "Asia/Kolkata"
+            });
+            const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            const currentDay = new Date(date).getDay();
+            const currentDate = new Date(date).getDate();
+            const currentMonth = new Date(date).getMonth();
+
+            // Format date as "06 Aug, Tuesday"
+            return `${String(currentDate).padStart(2, '0')} ${months[currentMonth]}, ${days[currentDay]}`;
+        }
+
+        // Call updateTimer once initially to set the timer and date right away
+        updateTimer();
+
+        // Use setInterval to update the timer every second (1000 ms)
+        setInterval(updateTimer, 1000);
+
+
+        // Existing internal JavaScript
+        document.addEventListener("DOMContentLoaded", function () {
+            var cashHeader = document.getElementById("cashHeader");
+            var today = new Date();
+            var options = { month: 'long', day: 'numeric' };
+            var formattedDate = today.toLocaleDateString('en-US', options);
+            cashHeader.textContent += " - " + formattedDate;
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const deliveryTable = document.getElementById('deliverydata');
+            const sectorialTable = document.getElementById('sectorialdata');
+            const volumeTable = document.getElementById('volumetable');
+            const deliveryLink = document.getElementById('deliverylink');
+            const sectorialLink = document.getElementById('sectoriallink');
+            const volumeLink = document.getElementById('volumelink');
+
+            deliveryLink.addEventListener('click', () => {
+                deliveryTable.style.display = 'table';
+                sectorialTable.style.display = 'none';
+                volumeTable.style.display = 'none';
+            });
+
+            sectorialLink.addEventListener('click', () => {
+                deliveryTable.style.display = 'none';
+                sectorialTable.style.display = 'table';
+                volumeTable.style.display = 'none';
+            });
+
+            volumeLink.addEventListener('click', () => {
+                deliveryTable.style.display = 'none';
+                sectorialTable.style.display = 'none';
+                volumeTable.style.display = 'table';
+            });
+        });
+
+        // Initialize an array to store selected sources and selected times
+        let selectedSources = [];
+        let selectedTimes = [];
+
+        // Function to save filter values for a specific key
+        function saveFilterValues(key, filters) {
+            localStorage.setItem(`filters_${key}`, JSON.stringify(filters));
+        }
+
+        // Function to load filter values for a specific key
+        function loadFilterValues(key) {
+            return JSON.parse(localStorage.getItem(`filters_${key}`));
+        }
+
+        // Function to generate a key based on selected times
+        function generateTimeKey(times) {
+            return times.sort().join('_'); // Join selected times with an underscore
+        }
+
+        // Function to clear filter inputs
+        function clearFilterInputs() {
+            document.getElementById('volumeFilterInput').value = '';
+            document.getElementById('priceChangeFilterInput').value = '';
+            document.getElementById('turnoverFilterInput').value = '';
+            document.getElementById('percentturnoverFilterInput').value = '';
+        }
+
+        // Function to apply saved filters for the selected time or combination of times
+        function applySavedFilters(times) {
+            if (times.length === 0) {
+                clearFilterInputs(); // Clear filters if no time is selected
+                return;
+            }
+            const key = generateTimeKey(times);
+            const filters = loadFilterValues(key);
+            if (filters) {
+                document.getElementById('volumeFilterInput').value = filters.volumeThreshold || '';
+                document.getElementById('priceChangeFilterInput').value = filters.priceChangeThreshold || '';
+                document.getElementById('turnoverFilterInput').value = filters.turnoverThreshold || '';
+                document.getElementById('percentturnoverFilterInput').value = filters.percentTurnoverThreshold || '';
+            }
+        }
+
+        // Function to filter the data based on selected time and other filters
+        function filterData() {
+            const volumeThreshold = parseFloat(document.getElementById('volumeFilterInput').value);
+            const priceChangeThreshold = parseFloat(document.getElementById('priceChangeFilterInput').value);
+            const turnoverThreshold = parseFloat(document.getElementById('turnoverFilterInput').value);
+            const percentTurnoverThreshold = parseFloat(document.getElementById('percentturnoverFilterInput').value);
+
+            const tableRows = document.querySelectorAll('#volumetable tbody tr');
+
+            tableRows.forEach(row => {
+                const timeCell = row.cells[9].textContent.trim();
+                const volumeCellValue = parseFloat(row.cells[6].textContent);
+                const priceChangeCellValue = parseFloat(row.cells[5].textContent);
+                const turnoverCellValue = parseFloat(row.cells[7].textContent);
+                const percentTurnoverCellValue = parseFloat(row.cells[8].textContent);
+
+                const volumePass = isNaN(volumeThreshold) || volumeCellValue >= volumeThreshold;
+                const priceChangePass = isNaN(priceChangeThreshold) || priceChangeCellValue >= priceChangeThreshold;
+                const turnoverPass = isNaN(turnoverThreshold) || turnoverCellValue >= turnoverThreshold;
+                const percentTurnoverPass = isNaN(percentTurnoverThreshold) || percentTurnoverCellValue >= percentTurnoverThreshold;
+
+                const matchesTime = selectedTimes.length === 0 || selectedTimes.includes(timeCell);
+
+                row.style.display = (matchesTime && volumePass && priceChangePass && turnoverPass && percentTurnoverPass) ? '' : 'none';
+            });
+        }
+
+        // Function to save the current filter settings based on the selected time or combination of times
+        function saveCurrentFilters() {
+            if (selectedTimes.length === 0) return;
+
+            const filters = {
+                volumeThreshold: parseFloat(document.getElementById('volumeFilterInput').value),
+                priceChangeThreshold: parseFloat(document.getElementById('priceChangeFilterInput').value),
+                turnoverThreshold: parseFloat(document.getElementById('turnoverFilterInput').value),
+                percentTurnoverThreshold: parseFloat(document.getElementById('percentturnoverFilterInput').value),
+            };
+
+            const key = generateTimeKey(selectedTimes);
+            saveFilterValues(key, filters);
+        }
+
+        // Function to reset the filters
+        function resetFilters() {
+            clearFilterInputs(); // Clear filters on reset
+            selectedSources = [];
+            selectedTimes = [];
+            document.querySelectorAll('.selection-box').forEach(box => box.classList.remove('active'));
+            document.querySelectorAll('input[name="timeFilter"]').forEach(checkbox => checkbox.checked = false);
+            filterData();
+        }
+
+        // Event listener to handle time checkbox selection
+        document.querySelectorAll('input[name="timeFilter"]').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                selectedTimes = Array.from(document.querySelectorAll('input[name="timeFilter"]:checked'))
+                    .map(cb => cb.value);
+                applySavedFilters(selectedTimes); // Load filters for the selected combination of times
+                filterData();
+            });
+        });
+
+        // Attach event listeners to save filters on input change
+        ['volumeFilterInput', 'priceChangeFilterInput', 'turnoverFilterInput', 'percentturnoverFilterInput'].forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                saveCurrentFilters();
+                filterData();
+            });
+        });
+
+        // Initial filter application on page load
+        window.onload = function () {
+            applySavedFilters(selectedTimes); // Load filters for the selected combination of times on page load
+            filterData(); // Filter data once saved filters are loaded
+        };
+
+
+
+    </script>
+
+
+    </script>
+    <script src="./vendor/global/global.min.js"></script>
+    <script src="./vendor/chart.js/Chart.bundle.min.js"></script>
+    <script src="./vendor/jquery-nice-select/js/jquery.nice-select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Apex Chart -->
+    <script src="./vendor/apexchart/apexchart.js"></script>
+    <script src="./vendor/swiper/js/swiper-bundle.min.js"></script>
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/wnumb/1.2.0/wNumb.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/14.6.4/nouislider.min.js"></script>
+    <script src="./vendor/raphael/raphael.min.js"></script>
+    <script src="./vendor/morris/morris.min.js"></script>
+
+    <!-- Dashboard 1 -->
+    <script src="./js/dashboard/dashboard-1.js"></script>
+    <script src="./js/custom.js"></script>
+    <script src="./js/deznav-init.js"></script>
+    <script src="./js/dashboard/tradingview-2.js"></script>
+
+    <script src="./vendor/apexchart/apexchart-init.js"></script>
+
+    <script>
+        jQuery(document).ready(function () {
+            setTimeout(function () {
+                dzSettingsOptions.version = 'dark';
+                new dzSettings(dzSettingsOptions);
+            }, 1500)
+        });
+    </script>
+
+    <script>
+    async function fetchTopBarPrices() {
+        try {
+            const response = await fetch('websocket/live_prices.php');
+            const data = await response.json();
+            // Update NIFTY 50
+            if (data['NSE_INDEX|Nifty 50'] && data['NSE_INDEX|Nifty 50'].ltp !== null) {
+                document.getElementById('nifty-price').textContent = data['NSE_INDEX|Nifty 50'].ltp.toFixed(2);
+            } else {
+                document.getElementById('nifty-price').textContent = '--';
+            }
+            // Update BANKNIFTY
+            if (data['NSE_INDEX|Nifty Bank'] && data['NSE_INDEX|Nifty Bank'].ltp !== null) {
+                document.getElementById('bank-price').textContent = data['NSE_INDEX|Nifty Bank'].ltp.toFixed(2);
+            } else {
+                document.getElementById('bank-price').textContent = '--';
+            }
+        } catch (e) {
+            document.getElementById('nifty-price').textContent = '--';
+            document.getElementById('bank-price').textContent = '--';
+        }
+    }
+    setInterval(fetchTopBarPrices, 5000);
+    fetchTopBarPrices();
+    </script>
+
+    <script>
+    async function fetchLivePrices() {
+        try {
+            const response = await fetch('market_data_cache.json');
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            const data = await response.json();
+
+            // NIFTY 50
+            if (
+                data.nifty50 &&
+                data.nifty50.price !== '--' &&
+                data.nifty50.price !== null &&
+                data.nifty50.price !== undefined &&
+                data.nifty50.change_percent !== undefined
+            ) {
+                document.getElementById('nifty-price').textContent = data.nifty50.price;
+                document.getElementById('nifty-change').textContent = `(${data.nifty50.change_percent}%)`;
+            } else {
+                document.getElementById('nifty-price').textContent = '';
+                document.getElementById('nifty-change').textContent = '';
+            }
+
+            // BANKNIFTY
+            if (
+                data.niftybank &&
+                data.niftybank.price !== '--' &&
+                data.niftybank.price !== null &&
+                data.niftybank.price !== undefined &&
+                data.niftybank.change_percent !== undefined
+            ) {
+                document.getElementById('bank-price').textContent = data.niftybank.price;
+                document.getElementById('bank-change').textContent = `(${data.niftybank.change_percent}%)`;
+            } else {
+                document.getElementById('bank-price').textContent = '';
+                document.getElementById('bank-change').textContent = '';
+            }
+        } catch (error) {
+            document.getElementById('nifty-price').textContent = '';
+            document.getElementById('nifty-change').textContent = '';
+            document.getElementById('bank-price').textContent = '';
+            document.getElementById('bank-change').textContent = '';
+            console.error('Error fetching live prices:', error);
+        }
+    }
+    setInterval(fetchLivePrices, 2000);
+    fetchLivePrices();
+    </script>
+</body>
+
+</html>
+
